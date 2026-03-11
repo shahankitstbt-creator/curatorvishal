@@ -1,129 +1,94 @@
-# 📡 SocialFeed Aggregator — Curator.io Clone
+# SocialFeed — Vercel Deployment Guide
 
-A self-hosted, full-featured social media feed aggregator. Collect posts from Instagram, YouTube, X/Twitter, Facebook, TikTok, LinkedIn, Reddit, and more — then embed the beautiful widget on any website.
+## Step 1: Set Up MongoDB (Free)
 
----
+1. Go to https://www.mongodb.com/atlas
+2. Create a free account → Create a free M0 cluster
+3. Database Access → Add new user (username + password, note them down)
+4. Network Access → Add IP Address → Allow Access From Anywhere (0.0.0.0/0)
+5. Clusters → Connect → Connect your application → Copy the connection string
+   It looks like: `mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/socialfeed?retryWrites=true&w=majority`
 
-## 🚀 Quick Start
+## Step 2: Deploy to Vercel
 
-### 1. Install & Run
+### Option A — Vercel Dashboard (easiest)
+1. Go to https://vercel.com → New Project
+2. Import from GitHub (push this folder to GitHub first), OR
+3. Use Vercel CLI: `npm i -g vercel` then run `vercel` in this folder
 
+### Option B — Vercel CLI
 ```bash
-cd socialfeed
-npm install --ignore-scripts express bcryptjs jsonwebtoken uuid cors
-node backend/server.js
+npm install -g vercel
+vercel login
+vercel --prod
 ```
 
-Open: **http://localhost:3000`**
+## Step 3: Add Environment Variables in Vercel
 
-### 2. Default Login
-- **Email:** `admin@socialfeed.com`
-- **Password:** `admin123`
+Go to your Vercel project → Settings → Environment Variables and add:
 
----
+| Variable | Value | Required |
+|----------|-------|----------|
+| `MONGODB_URI` | Your MongoDB Atlas connection string | ✅ YES |
+| `JWT_SECRET` | Any random string (e.g. `my_super_secret_key_123`) | ✅ YES |
+| `BASE_URL` | Your Vercel URL e.g. `https://yourapp.vercel.app` | ✅ YES |
+| `INSTAGRAM_CLIENT_ID` | Instagram App ID | For Instagram |
+| `INSTAGRAM_CLIENT_SECRET` | Instagram App Secret | For Instagram |
+| `FACEBOOK_APP_ID` | Facebook App ID | For Facebook |
+| `FACEBOOK_APP_SECRET` | Facebook App Secret | For Facebook |
+| `YOUTUBE_CLIENT_ID` | Google OAuth Client ID | For YouTube |
+| `YOUTUBE_CLIENT_SECRET` | Google OAuth Client Secret | For YouTube |
+| `TWITTER_CLIENT_ID` | Twitter OAuth 2.0 Client ID | For Twitter |
+| `TWITTER_CLIENT_SECRET` | Twitter OAuth 2.0 Client Secret | For Twitter |
+| `LINKEDIN_CLIENT_ID` | LinkedIn Client ID | For LinkedIn |
+| `LINKEDIN_CLIENT_SECRET` | LinkedIn Client Secret | For LinkedIn |
+| `REDDIT_CLIENT_ID` | Reddit App ID | For Reddit |
+| `REDDIT_CLIENT_SECRET` | Reddit App Secret | For Reddit |
+| `TIKTOK_CLIENT_KEY` | TikTok Client Key | For TikTok |
+| `TIKTOK_CLIENT_SECRET` | TikTok Client Secret | For TikTok |
 
-## ✨ Features
+## Step 4: Update OAuth Redirect URIs
 
-### Admin Panel
-- 🔐 **Auth** — Login / Register with JWT tokens
-- 📡 **Feeds** — Create multiple feed aggregators
-- 🔗 **Sources** — Add platforms (Instagram, YouTube, X, Facebook, TikTok, LinkedIn, Reddit, Vimeo, Flickr)
-- 📝 **Posts** — Auto-pulled sample posts per source, manual post adding, publish/unpublish, pin to top, delete
-- 🎨 **Design** — Live preview, dark/light theme, grid/masonry/carousel layout, column count, gap, border radius, show/hide elements
-- 🚀 **Publish** — Toggle feed live, copy API key, get embed code
+For every platform you want to connect, update the Redirect URI from:
+`http://localhost:3000/oauth/callback/PLATFORM`
+to:
+`https://yourapp.vercel.app/oauth/callback/PLATFORM`
 
-### Widget Embed
-Add these 3 lines to ANY website:
+## Step 5: Done!
 
+Open `https://yourapp.vercel.app`
+Login: admin@socialfeed.com / admin123
+
+## File Structure
+```
+vercel-socialfeed/
+├── api/
+│   ├── _db.js            # MongoDB models (shared)
+│   ├── _helpers.js        # Auth, CORS utils (shared)
+│   ├── _fetchers.js       # Real social media API fetchers (shared)
+│   ├── auth.js            # POST /api/auth (login/register/me)
+│   ├── feeds.js           # CRUD /api/feeds
+│   ├── sources.js         # CRUD /api/sources
+│   ├── posts.js           # CRUD /api/posts
+│   ├── credentials.js     # /api/credentials (store platform keys)
+│   ├── widget.js          # GET /api/widget?apiKey= (public)
+│   ├── widget-script.js   # GET /widget.js (embeddable script)
+│   ├── oauth-start.js     # GET /oauth/start/:platform
+│   └── oauth-callback.js  # GET /oauth/callback/:platform
+├── public/
+│   ├── index.html         # Admin panel
+│   └── demo.html          # Widget preview
+├── vercel.json            # Vercel routing config
+└── package.json
+```
+
+## Embedding on Any Website
+
+After deploying and publishing a feed:
 ```html
-<div id="my-social-feed"></div>
-<script src="http://localhost:3000/widget.js"></script>
-<script>SocialFeed.init('YOUR_API_KEY', 'my-social-feed');</script>
+<div id="my-feed"></div>
+<script src="https://yourapp.vercel.app/widget.js"></script>
+<script>
+  SocialFeed.init('YOUR_API_KEY', 'my-feed');
+</script>
 ```
-
----
-
-## 📁 Project Structure
-
-```
-socialfeed/
-├── backend/
-│   └── server.js          # Express API + widget.js endpoint
-├── frontend/
-│   ├── index.html         # Full admin panel (single file)
-│   └── demo.html          # Widget preview page
-├── database.json          # Auto-created JSON database
-└── README.md
-```
-
----
-
-## 🔌 Connecting Real Social Media APIs
-
-### Instagram
-1. Create a Facebook App at developers.facebook.com
-2. Add Instagram Basic Display product
-3. Get User Token → paste in Source Access Token field
-
-### YouTube
-1. Go to console.cloud.google.com
-2. Enable YouTube Data API v3
-3. Create API Key → paste in Access Token field
-
-### X / Twitter
-1. Apply at developer.twitter.com
-2. Create an App → get Bearer Token
-3. Paste Bearer Token in Access Token field
-
-### Facebook
-1. Create a Page Access Token at developers.facebook.com
-2. Use Graph API Explorer
-3. Paste token in Access Token field
-
-> **Note:** Without real tokens, the app generates realistic sample posts for preview/testing.
-
----
-
-## 🌐 Deploying to Production
-
-### Option A: Railway / Render (free)
-```bash
-# Push to GitHub → connect to Railway/Render
-# Set PORT env variable
-# Done!
-```
-
-### Option B: VPS / Ubuntu Server
-```bash
-npm install -g pm2
-pm2 start backend/server.js --name socialfeed
-pm2 save
-```
-
-Update the widget embed URL from `localhost:3000` to your domain.
-
----
-
-## 🔒 Security Notes
-
-- Change `JWT_SECRET` in server.js before deploying
-- Use HTTPS in production
-- Add rate limiting for the public `/api/widget/:key` endpoint
-- Consider Redis instead of JSON file for production database
-
----
-
-## 📋 API Reference
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/auth/login` | POST | No | Login |
-| `/api/auth/register` | POST | No | Register |
-| `/api/feeds` | GET | Yes | List feeds |
-| `/api/feeds` | POST | Yes | Create feed |
-| `/api/feeds/:id` | PUT | Yes | Update feed |
-| `/api/feeds/:id` | DELETE | Yes | Delete feed |
-| `/api/feeds/:id/sources` | GET/POST | Yes | Manage sources |
-| `/api/feeds/:id/posts` | GET/POST/PUT/DELETE | Yes | Manage posts |
-| `/api/widget/:apiKey` | GET | No (public) | Widget data |
-| `/widget.js` | GET | No (public) | Embeddable script |

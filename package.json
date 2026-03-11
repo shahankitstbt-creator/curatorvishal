@@ -2,11 +2,6 @@
   "name": "socialfeed-aggregator",
   "version": "2.0.0",
   "description": "Self-hosted Social Media Feed Aggregator",
-    "type": "commonjs",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
-  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
