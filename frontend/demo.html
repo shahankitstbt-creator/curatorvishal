@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialFeed Widget Demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0a0f; color: #e0e0e0; }
+  .hero { text-align: center; padding: 80px 20px 60px; background: radial-gradient(ellipse at 50% 0%, rgba(124,110,247,0.2) 0%, transparent 60%); }
+  .hero h1 { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #7c6ef7, #a594f9, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; }
+  .hero p { font-size: 18px; color: #888; max-width: 500px; margin: 0 auto 32px; }
+  .input-row { display: flex; gap: 10px; justify-content: center; max-width: 500px; margin: 0 auto; }
+  .input-row input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 16px; color: white; font-size: 14px; outline: none; }
+  .input-row input:focus { border-color: #7c6ef7; }
+  .btn { background: linear-gradient(135deg, #7c6ef7, #a594f9); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .feed-section { padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #999; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; }
+  .admin-link { display: inline-block; margin: 0 auto; background: rgba(124,110,247,0.1); border: 1px solid rgba(124,110,247,0.3); color: #a594f9; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; }
+  .admin-link:hover { background: rgba(124,110,247,0.2); }
+  .links { text-align: center; padding: 20px; }
+  .error-msg { color: #ef4444; font-size: 13px; margin-top: 8px; text-align: center; }
+  #status { font-size: 12px; color: #888; text-align: center; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>SocialFeed Widget</h1>
+  <p>Enter your API key to preview how your feed looks when embedded on any website</p>
+  <div class="input-row">
+    <input type="text" id="api-input" placeholder="Paste your API key here..." />
+    <button class="btn" onclick="loadFeed()">Preview →</button>
+  </div>
+  <div id="status">Enter an API key from the admin panel to preview your feed</div>
+</div>
+
+<div class="feed-section">
+  <div class="section-title">Your Social Feed Preview</div>
+  <div id="social-feed-container"></div>
+</div>
+
+<div class="links">
+  <a href="/" class="admin-link">← Open Admin Panel</a>
+</div>
+
+<script src="/widget.js"></script>
+<script>
+function loadFeed() {
+  const key = document.getElementById('api-input').value.trim();
+  if (!key) { document.getElementById('status').textContent = '⚠️ Please enter an API key'; return; }
+  
+  document.getElementById('status').innerHTML = '⏳ Loading feed...';
+  document.getElementById('social-feed-container').innerHTML = '';
+  
+  fetch('/api/widget/' + key)
+    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
+    .then(({ ok, status, data }) => {
+      if (!ok) {
+        let help = '';
+        if (status === 403) help = '<br><small>👉 Go to Admin Panel → open your feed → <b>Publish & Embed</b> → toggle <b>Live</b></small>';
+        if (status === 404) help = '<br><small>👉 Check the API key in <b>Publish & Embed</b> tab and copy it again</small>';
+        document.getElementById('status').innerHTML = '❌ ' + data.error + help;
+        return;
+      }
+      document.getElementById('status').innerHTML = '✅ Loaded <b>' + data.feed.name + '</b> — ' + data.posts.length + ' posts';
+      SocialFeed.init(key, 'social-feed-container');
+    })
+    .catch(err => {
+      document.getElementById('status').innerHTML = '❌ Could not reach server. Make sure <b>node server.js</b> is running on port 3000.';
+    });
+}
+
+// Check URL param
+const params = new URLSearchParams(window.location.search);
+const key = params.get('key');
+if (key) {
+  document.getElementById('api-input').value = key;
+  loadFeed();
+}
+</script>
+</body>
+</html>

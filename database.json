@@ -1,0 +1,48 @@
+{
+  "users": [
+    {
+      "id": "8d744c04-c98d-400a-8b7b-1363a4a526a4",
+      "email": "admin@socialfeed.com",
+      "password": "$2b$10$r2eIYRPNmrPUils5qbNaOO1WYUhwnZm9w6s2lCzzeEqN8dkm7ZJpq",
+      "name": "Admin",
+      "role": "admin",
+      "createdAt": "2026-03-11T07:50:21.503Z"
+    }
+  ],
+  "feeds": [
+    {
+      "id": "3bac455f-0087-4ced-8a62-4ac3608a80f3",
+      "userId": "8d744c04-c98d-400a-8b7b-1363a4a526a4",
+      "name": "TestingCurator",
+      "description": "",
+      "theme": "dark",
+      "layout": "grid",
+      "columns": 3,
+      "gap": 16,
+      "cardRadius": 12,
+      "showAvatar": true,
+      "showUsername": true,
+      "showCaption": true,
+      "showPlatform": true,
+      "showDate": true,
+      "maxPosts": 20,
+      "apiKey": "929448078ab4467f8b149f3f9f46b61e",
+      "published": false,
+      "createdAt": "2026-03-11T10:45:59.296Z",
+      "updatedAt": "2026-03-11T10:45:59.297Z"
+    }
+  ],
+  "sources": [],
+  "posts": [],
+  "widgets": [],
+  "settings": [],
+  "credentials": [
+    {
+      "userId": "8d744c04-c98d-400a-8b7b-1363a4a526a4",
+      "platform": "facebook",
+      "clientId": "1527376181213554",
+      "clientSecret": "f8c2aa753456357506c4e084f28b681e",
+      "bearerToken": ""
+    }
+  ]
+}
