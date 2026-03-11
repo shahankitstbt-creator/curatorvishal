@@ -7,6 +7,18 @@ const path = require('path');
 const fs = require('fs');
 const fetch = require('node-fetch');
 
+// ─── LOAD .env ───────────────────────────────────────────────────────────────
+const envFile = path.join(__dirname, '../.env');
+if (fs.existsSync(envFile)) {
+  fs.readFileSync(envFile, 'utf8').split('\n').forEach(line => {
+    const eq = line.indexOf('=');
+    if (eq > 0 && !line.startsWith('#')) {
+      const k = line.substring(0, eq).trim();
+      const v = line.substring(eq + 1).trim().replace(/^["']|["']$/g, '');
+      process.env[k] = v;
+    }
+  });
+}
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'socialfeed_secret_change_in_production';
@@ -30,18 +42,6 @@ if (!db.users.length) {
   saveDB();
 }
 
-// ─── LOAD .env ───────────────────────────────────────────────────────────────
-const envFile = path.join(__dirname, '../.env');
-if (fs.existsSync(envFile)) {
-  fs.readFileSync(envFile, 'utf8').split('\n').forEach(line => {
-    const eq = line.indexOf('=');
-    if (eq > 0 && !line.startsWith('#')) {
-      const k = line.substring(0, eq).trim();
-      const v = line.substring(eq + 1).trim().replace(/^["']|["']$/g, '');
-      process.env[k] = v;
-    }
-  });
-}
 
 // ─── OAUTH PLATFORM CONFIG ────────────────────────────────────────────────────
 const PLATFORM_OAUTH = {
@@ -123,7 +123,6 @@ function getCreds(platform, userId) {
 function getBaseUrl(req) {
   return process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 }
-
 // ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
 app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE','OPTIONS'] }));
 app.options('*', cors());
