@@ -33,6 +33,7 @@ app.get('/oauth/callback/:platform', (req, res, next) => {
 app.get('/widget.js', wrap(require('./api/widget-script')));
 
 // API routes — all methods
+app.all('/api/health',     wrap(require('./api/health')));
 app.all('/api/auth',        wrap(require('./api/auth')));
 app.all('/api/feeds',       wrap(require('./api/feeds')));
 app.all('/api/sources',     wrap(require('./api/sources')));
@@ -46,3 +47,15 @@ app.get('*', (req, res) => {
 });
 
 module.exports = app;
+
+// Start server locally (Vercel ignores this, uses module.exports instead)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`\n🚀  SocialFeed running → http://localhost:${PORT}`);
+    console.log(`📧  Login: admin@socialfeed.com / admin123\n`);
+  });
+
+  require('dotenv').config();
+
+}

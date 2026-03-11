@@ -3,29 +3,28 @@ const mongoose = require('mongoose');
 let isConnected = false;
 
 async function connectDB() {
-  if (isConnected) return;
+  if (isConnected && mongoose.connection.readyState === 1) return;
+  
   const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error('MONGODB_URI is not set in Vercel Environment Variables. Go to Vercel → Project Settings → Environment Variables and add it.');
-  try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
-    isConnected = true;
-  } catch (e) {
-    throw new Error('MongoDB connection failed: ' + e.message);
-  }
+  if (!uri) throw new Error('MONGODB_URI environment variable is not set in Vercel.');
+
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 30000,
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 30000,
+  });
+  isConnected = true;
 }
 
 const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
-  password: String,
-  name: String,
+  password: String, name: String,
   role: { type: String, default: 'user' },
   createdAt: { type: Date, default: Date.now }
 });
 
 const FeedSchema = new mongoose.Schema({
-  userId: String,
-  name: String,
-  description: String,
+  userId: String, name: String, description: String,
   theme: { type: String, default: 'dark' },
   layout: { type: String, default: 'grid' },
   columns: { type: Number, default: 3 },
@@ -44,32 +43,18 @@ const FeedSchema = new mongoose.Schema({
 });
 
 const SourceSchema = new mongoose.Schema({
-  feedId: String,
-  userId: String,
-  platform: String,
+  feedId: String, userId: String, platform: String,
   type: { type: String, default: 'profile' },
-  handle: String,
-  displayName: String,
-  avatar: String,
-  accessToken: String,
-  refreshToken: String,
-  platformUserId: String,
+  handle: String, displayName: String, avatar: String,
+  accessToken: String, refreshToken: String, platformUserId: String,
   status: { type: String, default: 'connected' },
-  lastSync: Date,
-  createdAt: { type: Date, default: Date.now }
+  lastSync: Date, createdAt: { type: Date, default: Date.now }
 });
 
 const PostSchema = new mongoose.Schema({
-  feedId: String,
-  sourceId: String,
-  platform: String,
-  externalId: String,
-  username: String,
-  displayName: String,
-  avatar: String,
-  content: String,
-  media: [String],
-  url: String,
+  feedId: String, sourceId: String, platform: String, externalId: String,
+  username: String, displayName: String, avatar: String, content: String,
+  media: [String], url: String,
   likes: { type: Number, default: 0 },
   comments: { type: Number, default: 0 },
   shares: { type: Number, default: 0 },
@@ -80,17 +65,13 @@ const PostSchema = new mongoose.Schema({
 });
 
 const CredentialSchema = new mongoose.Schema({
-  userId: String,
-  platform: String,
-  clientId: String,
-  clientSecret: String,
-  bearerToken: String
+  userId: String, platform: String,
+  clientId: String, clientSecret: String, bearerToken: String
 });
 
 const OAuthStateSchema = new mongoose.Schema({
   state: { type: String, unique: true },
-  data: String,
-  pkce: String,
+  data: String, pkce: String,
   createdAt: { type: Date, default: Date.now, expires: 600 }
 });
 
