@@ -1,10 +1,9 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/widget.js", "destination": "/api/widget-script" },
-    { "source": "/oauth/start/:platform", "destination": "/api/oauth-start?platform=:platform" },
+    { "source": "/widget.js",                "destination": "/api/widget-script" },
+    { "source": "/oauth/start/:platform",    "destination": "/api/oauth-start?platform=:platform" },
     { "source": "/oauth/callback/:platform", "destination": "/api/oauth-callback?platform=:platform" },
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/((?!api|widget\\.js|oauth).*)", "destination": "/public/$1" }
+    { "source": "/((?!api/).*)",             "destination": "/public/$1" }
   ]
 }
