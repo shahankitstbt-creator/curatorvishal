@@ -14,7 +14,7 @@ npm install --ignore-scripts express bcryptjs jsonwebtoken uuid cors
 node backend/server.js
 ```
 
-Open: **http://localhost:3000`**
+Open: **http://localhost:3000**
 
 ### 2. Default Login
 - **Email:** `admin@socialfeed.com`

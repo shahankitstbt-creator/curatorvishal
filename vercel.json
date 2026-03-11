@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/widget.js", "dest": "/api/widget-script.js" },
+    { "src": "/oauth/start/(.*)", "dest": "/api/oauth-start.js?platform=$1" },
+    { "src": "/oauth/callback/(.*)", "dest": "/api/oauth-callback.js?platform=$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}
