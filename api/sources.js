@@ -1,6 +1,7 @@
 const { connectDB, Feed, Source, Post } = require('./_db');
 const { json, err, cors, getToken, verifyToken } = require('./_helpers');
 const { fetchPosts } = require('./_fetchers');
+const mongoose = require('mongoose');
 
 module.exports = async (req, res) => {
   cors(res);
@@ -12,15 +13,13 @@ module.exports = async (req, res) => {
 
   const { feedId, sourceId, action } = req.query;
 
-  // feedId can be either _id or string id - try both
-  const feed = await Feed.findOne({ $or: [{ _id: feedId }, { id: feedId }], userId: user.id }).lean().catch(() =>
-    Feed.findOne({ userId: user.id }).lean()
-  );
+  // Find feed - handle both string id and ObjectId
+  let feed;
+  try { feed = await Feed.findOne({ _id: feedId, userId: user.id }).lean(); } catch(e) {}
   if (!feed) return err(res, 'Feed not found', 404);
-  const resolvedFeedId = feed._id.toString();
 
   if (req.method === 'GET') {
-    const sources = await Source.find({ feedId: resolvedFeedId }).lean();
+    const sources = await Source.find({ feedId }).lean();
     return json(res, sources.map(s => ({ ...s, id: s._id.toString(), accessToken: s.accessToken ? '***' : '' })));
   }
 
@@ -31,21 +30,37 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST' && action === 'sync' && sourceId) {
-    const source = await Source.findById(sourceId).lean();
-    if (!source) return err(res, 'Source not found', 404);
+    // Get source WITH the real access token (don't use lean masked version)
+    let source;
+    try { source = await Source.findById(sourceId).lean(); } catch(e) {}
+    if (!source) return err(res, 'Source not found: ' + sourceId, 404);
+
+    console.log(`[sync] platform=${source.platform} feedId=${feedId} hasToken=${!!source.accessToken}`);
+
     try {
       const posts = await fetchPosts(source);
+      console.log(`[sync] fetched ${posts.length} posts from ${source.platform}`);
+
       let added = 0;
       for (const p of posts) {
-        const exists = await Post.findOne({ feedId: resolvedFeedId, externalId: p.externalId });
+        const exists = await Post.findOne({ feedId, externalId: p.externalId });
         if (!exists) {
-          await Post.create({ ...p, feedId: resolvedFeedId, sourceId, platform: source.platform, published: true, pinned: false });
+          await Post.create({
+            ...p,
+            feedId,
+            sourceId: source._id.toString(),
+            platform: source.platform,
+            published: true,
+            pinned: false,
+          });
           added++;
         }
       }
       await Source.findByIdAndUpdate(sourceId, { lastSync: new Date() });
-      return json(res, { success: true, newPosts: added });
+      console.log(`[sync] added ${added} new posts`);
+      return json(res, { success: true, newPosts: added, totalFetched: posts.length });
     } catch (e) {
+      console.error(`[sync] error:`, e.message);
       return err(res, e.message);
     }
   }

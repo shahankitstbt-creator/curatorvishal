@@ -161,9 +161,7 @@ async function fetchYouTube(s) {
     return {
       externalId: 'yt_' + vid,
       username: s.handle, displayName: s.displayName, avatar: s.avatar,
-      content: sn.title + (sn.description ? '
-
-' + sn.description.substring(0, 200) : ''),
+      content: sn.title + (sn.description ? '\n\n' + sn.description.substring(0, 200) : ''),
       media: [sn.thumbnails?.high?.url || sn.thumbnails?.maxres?.url || sn.thumbnails?.default?.url || ''],
       url: `https://www.youtube.com/watch?v=${vid}`,
       likes: parseInt(st.likeCount) || 0, comments: parseInt(st.commentCount) || 0, shares: 0,
