@@ -1,11 +1,8 @@
 const { connectDB, Feed, Post } = require('./_db');
-const { cors } = require('./_helpers');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
-
   await connectDB();
 
   const { apiKey } = req.query;
@@ -21,12 +18,7 @@ module.exports = async (req, res) => {
     .lean();
 
   res.status(200).json({
-    feed: {
-      id: feed._id, name: feed.name, theme: feed.theme, layout: feed.layout,
-      columns: feed.columns, gap: feed.gap, cardRadius: feed.cardRadius,
-      showAvatar: feed.showAvatar, showUsername: feed.showUsername,
-      showCaption: feed.showCaption, showPlatform: feed.showPlatform, showDate: feed.showDate,
-    },
+    feed: { id: feed._id, name: feed.name, theme: feed.theme, layout: feed.layout, columns: feed.columns, gap: feed.gap, cardRadius: feed.cardRadius, showAvatar: feed.showAvatar, showUsername: feed.showUsername, showCaption: feed.showCaption, showPlatform: feed.showPlatform, showDate: feed.showDate },
     posts,
   });
 };
