@@ -3,79 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SocialFeed Widget Demo</title>
+<title>SocialFeed Widget Preview</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0a0f; color: #e0e0e0; }
-  .hero { text-align: center; padding: 80px 20px 60px; background: radial-gradient(ellipse at 50% 0%, rgba(124,110,247,0.2) 0%, transparent 60%); }
-  .hero h1 { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #7c6ef7, #a594f9, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; }
-  .hero p { font-size: 18px; color: #888; max-width: 500px; margin: 0 auto 32px; }
-  .input-row { display: flex; gap: 10px; justify-content: center; max-width: 500px; margin: 0 auto; }
-  .input-row input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 16px; color: white; font-size: 14px; outline: none; }
-  .input-row input:focus { border-color: #7c6ef7; }
-  .btn { background: linear-gradient(135deg, #7c6ef7, #a594f9); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .feed-section { padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto; }
-  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #999; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; }
-  .admin-link { display: inline-block; margin: 0 auto; background: rgba(124,110,247,0.1); border: 1px solid rgba(124,110,247,0.3); color: #a594f9; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; }
-  .admin-link:hover { background: rgba(124,110,247,0.2); }
-  .links { text-align: center; padding: 20px; }
-  .error-msg { color: #ef4444; font-size: 13px; margin-top: 8px; text-align: center; }
-  #status { font-size: 12px; color: #888; text-align: center; margin-top: 12px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.hero { text-align: center; padding: 60px 20px 40px; }
+.hero h1 { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #7c6ef7, #a594f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+.hero p { color: #888; font-size: 16px; }
+.input-row { display: flex; gap: 12px; justify-content: center; padding: 0 20px 16px; flex-wrap: wrap; }
+.input-row input { width: 340px; padding: 12px 16px; background: #1a1a2e; border: 1px solid #333; border-radius: 10px; color: #e0e0e0; font-size: 14px; outline: none; }
+.input-row button { padding: 12px 24px; background: linear-gradient(135deg, #7c6ef7, #a594f9); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.status { text-align: center; padding: 8px; font-size: 13px; min-height: 28px; color: #ef4444; }
+.label { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #444; text-transform: uppercase; padding: 0 20px 20px; }
+#feed-container { padding: 0 20px 40px; max-width: 1200px; margin: 0 auto; }
+.back-btn { display: block; text-align: center; padding: 20px; }
+.back-btn a { color: #7c6ef7; text-decoration: none; font-size: 14px; }
 </style>
 </head>
 <body>
-
 <div class="hero">
   <h1>SocialFeed Widget</h1>
   <p>Enter your API key to preview how your feed looks when embedded on any website</p>
-  <div class="input-row">
-    <input type="text" id="api-input" placeholder="Paste your API key here..." />
-    <button class="btn" onclick="loadFeed()">Preview →</button>
-  </div>
-  <div id="status">Enter an API key from the admin panel to preview your feed</div>
 </div>
-
-<div class="feed-section">
-  <div class="section-title">Your Social Feed Preview</div>
-  <div id="social-feed-container"></div>
+<div class="input-row">
+  <input type="text" id="api-key-input" placeholder="Paste your API key here..." />
+  <button onclick="loadFeed()">Preview →</button>
 </div>
+<div class="status" id="status"></div>
+<div class="label">YOUR SOCIAL FEED PREVIEW</div>
+<div id="feed-container"></div>
+<div class="back-btn"><a href="/">← Open Admin Panel</a></div>
 
-<div class="links">
-  <a href="/" class="admin-link">← Open Admin Panel</a>
-</div>
-
-<script src="/widget.js"></script>
 <script>
 function loadFeed() {
-  const key = document.getElementById('api-input').value.trim();
-  if (!key) { document.getElementById('status').textContent = '⚠️ Please enter an API key'; return; }
-  
-  document.getElementById('status').innerHTML = '⏳ Loading feed...';
-  document.getElementById('social-feed-container').innerHTML = '';
-  
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { document.getElementById('status').textContent = 'Please enter an API key'; return; }
+  document.getElementById('status').textContent = 'Loading...';
+  document.getElementById('feed-container').innerHTML = '';
+
   fetch('/api/widget?apiKey=' + key)
-    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
-    .then(({ ok, status, data }) => {
-      if (!ok) {
-        let help = '';
-        if (status === 403) help = '<br><small>👉 Go to Admin Panel → open your feed → <b>Publish & Embed</b> → toggle <b>Live</b></small>';
-        if (status === 404) help = '<br><small>👉 Check the API key in <b>Publish & Embed</b> tab and copy it again</small>';
-        document.getElementById('status').innerHTML = '❌ ' + data.error + help;
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('status').textContent = '❌ ' + data.error;
         return;
       }
-      document.getElementById('status').innerHTML = '✅ Loaded <b>' + data.feed.name + '</b> — ' + data.posts.length + ' posts';
-      SocialFeed.init(key, 'social-feed-container');
+      document.getElementById('status').textContent = '✅ ' + data.posts.length + ' posts loaded';
+      renderFeed(data.feed, data.posts);
     })
-    .catch(err => {
-      document.getElementById('status').innerHTML = '❌ Could not reach server. Make sure <b>node server.js</b> is running on port 3000.';
+    .catch(() => {
+      document.getElementById('status').textContent = '❌ Could not reach server';
     });
 }
 
-// Check URL param
-const params = new URLSearchParams(window.location.search);
-const key = params.get('key');
-if (key) {
-  document.getElementById('api-input').value = key;
+function ago(d) {
+  const s = Math.floor((new Date() - new Date(d)) / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm';
+  if (s < 86400) return Math.floor(s/3600) + 'h';
+  return Math.floor(s/86400) + 'd';
+}
+
+function fmt(n) { return n >= 1000 ? (n/1000).toFixed(1) + 'k' : String(n); }
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const PC = { instagram:'#E4405F', youtube:'#FF0000', twitter:'#1DA1F2', x:'#000', facebook:'#1877F2', tiktok:'#010101', linkedin:'#0A66C2', reddit:'#FF4500' };
+
+function renderFeed(f, posts) {
+  const dark = f.theme === 'dark';
+  const bg = dark ? '#0a0a0a' : '#f5f5f5';
+  const cb = dark ? '#1a1a1a' : '#fff';
+  const tc = dark ? '#e0e0e0' : '#111';
+  const sc = dark ? '#888' : '#666';
+  const br = dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)';
+  const cols = f.columns || 3;
+  const gap = f.gap || 16;
+  const rad = f.cardRadius || 12;
+  const isC = f.layout === 'carousel';
+  const gs = isC
+    ? 'display:flex;overflow-x:auto;gap:' + gap + 'px;padding-bottom:8px'
+    : 'display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:' + gap + 'px';
+
+  const cards = posts.map(p => {
+    const c = PC[p.platform] || '#666';
+    const ini = (p.displayName || p.username || '?')[0].toUpperCase();
+    const hm = p.media && p.media[0];
+    const isVid = ['youtube','tiktok','vimeo'].includes(p.platform);
+    return '<div style="background:' + cb + ';border-radius:' + rad + 'px;border:1px solid ' + br + ';overflow:hidden;cursor:pointer;' + (isC ? 'min-width:260px;flex-shrink:0;' : '') + '" onclick="window.open(\'' + esc(p.url) + '\',\'_blank\')">'
+      + (hm ? '<img src="' + esc(p.media[0]) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy" onerror="this.style.display=\'none\'" />'
+             : '<div style="width:100%;aspect-ratio:1;background:' + (dark?'#222':'#eee') + ';display:flex;align-items:center;justify-content:center;font-size:2em">' + (isVid ? '▶️' : '🖼️') + '</div>')
+      + '<div style="padding:12px">'
+      + (f.showAvatar || f.showUsername
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+          + '<div style="width:30px;height:30px;border-radius:50%;background:' + c + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>'
+          + '<div style="flex:1;min-width:0">'
+          + (f.showUsername ? '<div style="font-size:12px;font-weight:600;color:' + tc + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(p.displayName || p.username) + '</div>' : '')
+          + (f.showPlatform ? '<div style="font-size:10px;color:' + c + '">' + esc(p.platform) + '</div>' : '')
+          + '</div></div>'
+        : '')
+      + (f.showCaption && p.content ? '<div style="font-size:12px;color:' + tc + ';line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px">' + esc(p.content) + '</div>' : '')
+      + '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:' + sc + '">'
+      + (f.showDate ? '<span>' + ago(p.publishedAt) + '</span>' : '<span></span>')
+      + '<div style="display:flex;gap:8px">'
+      + (p.likes ? '<span>❤ ' + fmt(p.likes) + '</span>' : '')
+      + (p.comments ? '<span>💬 ' + fmt(p.comments) + '</span>' : '')
+      + '</div></div>'
+      + '</div></div>';
+  }).join('');
+
+  document.getElementById('feed-container').innerHTML =
+    '<div style="background:' + bg + ';padding:' + gap + 'px;border-radius:' + rad + 'px">'
+    + '<div style="' + gs + '">' + cards + '</div>'
+    + '</div>';
+}
+
+// Auto-load if API key is in URL
+const urlKey = new URLSearchParams(window.location.search).get('key');
+if (urlKey) {
+  document.getElementById('api-key-input').value = urlKey;
   loadFeed();
 }
 </script>
