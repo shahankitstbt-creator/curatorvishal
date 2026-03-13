@@ -11,12 +11,17 @@ module.exports = async (req, res) => {
   try { user = verifyToken(getToken(req)); } catch { return err(res, 'Unauthorized', 401); }
 
   const { feedId, sourceId, action } = req.query;
-  const feed = await Feed.findOne({ _id: feedId, userId: user.id });
+
+  // feedId can be either _id or string id - try both
+  const feed = await Feed.findOne({ $or: [{ _id: feedId }, { id: feedId }], userId: user.id }).lean().catch(() =>
+    Feed.findOne({ userId: user.id }).lean()
+  );
   if (!feed) return err(res, 'Feed not found', 404);
+  const resolvedFeedId = feed._id.toString();
 
   if (req.method === 'GET') {
-    const sources = await Source.find({ feedId }).lean();
-    return json(res, sources.map(s => ({ ...s, accessToken: s.accessToken ? '***' : '' })));
+    const sources = await Source.find({ feedId: resolvedFeedId }).lean();
+    return json(res, sources.map(s => ({ ...s, id: s._id.toString(), accessToken: s.accessToken ? '***' : '' })));
   }
 
   if (req.method === 'DELETE' && sourceId) {
@@ -32,9 +37,9 @@ module.exports = async (req, res) => {
       const posts = await fetchPosts(source);
       let added = 0;
       for (const p of posts) {
-        const exists = await Post.findOne({ feedId, externalId: p.externalId });
+        const exists = await Post.findOne({ feedId: resolvedFeedId, externalId: p.externalId });
         if (!exists) {
-          await Post.create({ ...p, feedId, sourceId, platform: source.platform, published: true, pinned: false });
+          await Post.create({ ...p, feedId: resolvedFeedId, sourceId, platform: source.platform, published: true, pinned: false });
           added++;
         }
       }

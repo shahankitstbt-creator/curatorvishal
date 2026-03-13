@@ -12,16 +12,15 @@ module.exports = async (req, res) => {
   if (error) return res.send(donePage(false, platform, error_description || error));
   if (!code || !state) return res.send(donePage(false, platform, 'Missing code or state'));
 
-  // Retrieve state data from DB
   const stateDoc = await OAuthState.findOne({ state });
-  if (!stateDoc) return res.send(donePage(false, platform, 'Invalid or expired state. Please try again.'));
+  if (!stateDoc) return res.send(donePage(false, platform, 'Invalid or expired state. Please try connecting again.'));
 
   let stateData;
-  try { stateData = JSON.parse(stateDoc.data); } catch { return res.send(donePage(false, platform, 'Corrupt state data')); }
+  try { stateData = JSON.parse(stateDoc.data); } catch { return res.send(donePage(false, platform, 'Corrupt state')); }
 
   const { userId, feedId, type } = stateData;
   const pkce = stateDoc.pkce || '';
-  await OAuthState.deleteOne({ state }); // one-time use
+  await OAuthState.deleteOne({ state });
 
   const storedCred = await Credential.findOne({ userId, platform }).lean();
   const cfg = getCreds(platform, storedCred);
@@ -35,12 +34,12 @@ module.exports = async (req, res) => {
 
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token || '';
-
     const profile = await getProfile(platform, accessToken);
 
-    // Save source
     const source = await Source.create({
-      feedId, userId, platform,
+      feedId,
+      userId,
+      platform,
       type: type || 'profile',
       handle: profile.handle || '',
       displayName: profile.name || '',
@@ -52,25 +51,34 @@ module.exports = async (req, res) => {
       lastSync: new Date(),
     });
 
+    const sourceId = source._id.toString();
+
     // Fetch real posts immediately
     try {
-      const posts = await fetchPosts(source.toObject());
+      const posts = await fetchPosts({ ...source.toObject(), _id: sourceId });
       let added = 0;
       for (const p of posts) {
         const exists = await Post.findOne({ feedId, externalId: p.externalId });
         if (!exists) {
-          await Post.create({ ...p, feedId, sourceId: source._id.toString(), platform, published: true, pinned: false });
+          await Post.create({
+            ...p,
+            feedId,
+            sourceId,
+            platform,
+            published: true,
+            pinned: false,
+          });
           added++;
         }
       }
-      console.log(`[${platform}] Synced ${added} new posts`);
+      console.log(`[${platform}] Added ${added} posts for feed ${feedId}`);
     } catch (syncErr) {
-      console.warn(`[${platform}] Initial sync warning:`, syncErr.message);
+      console.error(`[${platform}] Sync error:`, syncErr.message);
     }
 
     return res.send(donePage(true, platform, null, profile));
   } catch (e) {
-    console.error(`[${platform}] OAuth callback error:`, e.message);
+    console.error(`[${platform}] OAuth error:`, e.message);
     return res.send(donePage(false, platform, e.message));
   }
 };

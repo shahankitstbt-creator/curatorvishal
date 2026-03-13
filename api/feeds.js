@@ -1,9 +1,12 @@
-const { connectDB, Feed } = require('./_db');
+const { connectDB, Feed, Source, Post } = require('./_db');
 const { json, err, cors, getToken, verifyToken } = require('./_helpers');
 const { v4: uuidv4 } = require('uuid');
 
-async function getUser(req) {
-  return verifyToken(getToken(req));
+function fixId(doc) {
+  if (!doc) return doc;
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  obj.id = obj._id ? obj._id.toString() : obj.id;
+  return obj;
 }
 
 module.exports = async (req, res) => {
@@ -12,49 +15,44 @@ module.exports = async (req, res) => {
   await connectDB();
 
   let user;
-  try { user = await getUser(req); } catch { return err(res, 'Unauthorized', 401); }
+  try { user = verifyToken(getToken(req)); } catch { return err(res, 'Unauthorized', 401); }
 
   const { id } = req.query;
 
-  // GET /api/feeds — list all
   if (req.method === 'GET' && !id) {
-    const feeds = await Feed.find({ userId: user.id });
-    return json(res, feeds);
+    const feeds = await Feed.find({ userId: user.id }).lean();
+    return json(res, feeds.map(f => ({ ...f, id: f._id.toString() })));
   }
 
-  // GET /api/feeds?id=xxx — get one
   if (req.method === 'GET' && id) {
-    const feed = await Feed.findOne({ _id: id, userId: user.id });
+    const feed = await Feed.findOne({ _id: id, userId: user.id }).lean();
     if (!feed) return err(res, 'Feed not found', 404);
-    return json(res, feed);
+    return json(res, { ...feed, id: feed._id.toString() });
   }
 
-  // POST /api/feeds — create
-  if (req.method === 'POST' && !id) {
+  if (req.method === 'POST') {
     const feed = await Feed.create({
       userId: user.id,
       name: req.body.name,
       description: req.body.description || '',
       apiKey: uuidv4().replace(/-/g, ''),
     });
-    return json(res, feed);
+    const obj = feed.toObject();
+    return json(res, { ...obj, id: obj._id.toString() });
   }
 
-  // PUT /api/feeds?id=xxx — update
   if (req.method === 'PUT' && id) {
     const feed = await Feed.findOneAndUpdate(
       { _id: id, userId: user.id },
       { ...req.body, updatedAt: new Date() },
       { new: true }
-    );
+    ).lean();
     if (!feed) return err(res, 'Feed not found', 404);
-    return json(res, feed);
+    return json(res, { ...feed, id: feed._id.toString() });
   }
 
-  // DELETE /api/feeds?id=xxx
   if (req.method === 'DELETE' && id) {
     await Feed.deleteOne({ _id: id, userId: user.id });
-    const { Source, Post } = require('./_db');
     await Source.deleteMany({ feedId: id });
     await Post.deleteMany({ feedId: id });
     return json(res, { success: true });
