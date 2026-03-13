@@ -110,15 +110,45 @@ async function fetchInstagram(s) {
 }
 
 async function fetchFacebook(s) {
-  const d = await apiFetch(`https://graph.facebook.com/me/posts?fields=id,message,full_picture,permalink_url,created_time,reactions.summary(true),comments.summary(true)&access_token=${s.accessToken}&limit=30`);
-  if (d.error) throw new Error('Facebook: ' + d.error.message);
-  return (d.data || []).map(p => ({
+  const token = s.accessToken;
+
+  // First try to get pages managed by this user
+  const pagesData = await apiFetch(`https://graph.facebook.com/me/accounts?access_token=${token}`);
+
+  let postsData;
+  let displayName = s.displayName;
+  let avatar = s.avatar;
+  let handle = s.handle;
+
+  if (!pagesData.error && pagesData.data && pagesData.data.length > 0) {
+    // Use first page's access token to get page posts
+    const page = pagesData.data[0];
+    const pageToken = page.access_token;
+    const pageId = page.id;
+    displayName = page.name;
+    handle = page.name;
+
+    // Get page picture
+    const picData = await apiFetch(`https://graph.facebook.com/${pageId}/picture?type=large&redirect=false&access_token=${pageToken}`);
+    if (picData.data && picData.data.url) avatar = picData.data.url;
+
+    postsData = await apiFetch(`https://graph.facebook.com/${pageId}/posts?fields=id,message,full_picture,permalink_url,created_time,reactions.summary(true),comments.summary(true)&access_token=${pageToken}&limit=30`);
+  } else {
+    // Fallback: try personal profile posts
+    postsData = await apiFetch(`https://graph.facebook.com/me/posts?fields=id,message,full_picture,permalink_url,created_time,reactions.summary(true),comments.summary(true)&access_token=${token}&limit=30`);
+  }
+
+  if (postsData.error) throw new Error('Facebook: ' + postsData.error.message);
+
+  return (postsData.data || []).map(p => ({
     externalId: 'fb_' + p.id,
-    username: s.handle, displayName: s.displayName, avatar: s.avatar,
-    content: p.message || '', media: p.full_picture ? [p.full_picture] : [],
-    url: p.permalink_url || '#',
+    username: handle, displayName, avatar,
+    content: p.message || '',
+    media: p.full_picture ? [p.full_picture] : [],
+    url: p.permalink_url || 'https://facebook.com',
     likes: p.reactions?.summary?.total_count || 0,
-    comments: p.comments?.summary?.total_count || 0, shares: 0,
+    comments: p.comments?.summary?.total_count || 0,
+    shares: 0,
     publishedAt: new Date(p.created_time),
   }));
 }
