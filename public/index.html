@@ -1036,6 +1036,7 @@ function renderSources() {
         <div class="source-detail">${s.type} · Last sync: ${new Date(s.lastSync).toLocaleString()}</div>
       </div>
       <span class="source-badge connected">● Connected</span>
+      <button class="btn btn-sm btn-secondary" onclick="syncSource('${s.id}')">🔄 Sync</button>
       <button class="btn btn-sm btn-danger" onclick="deleteSource('${s.id}')">Remove</button>
     </div>
   `).join('');
@@ -1079,6 +1080,16 @@ async function addSource() {
     goBackToStep1();
     renderSources();
   } catch(e) { toast(e.message, 'error'); }
+}
+
+async function syncSource(id) {
+  if (!currentFeed) return toast('No feed selected', 'error');
+  toast('Syncing posts...');
+  try {
+    const result = await api('POST', `/api/sources?feedId=${currentFeed.id}&sourceId=${id}&action=sync`);
+    toast('✅ ' + (result.newPosts || 0) + ' new posts added!');
+    await loadPosts();
+  } catch(e) { toast('Sync failed: ' + e.message, 'error'); }
 }
 
 async function deleteSource(id) {

@@ -124,29 +124,50 @@ async function fetchFacebook(s) {
 }
 
 async function fetchYouTube(s) {
-  const chData = await apiFetch('https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true', { Authorization: `Bearer ${s.accessToken}` });
-  if (chData.error) throw new Error('YouTube: ' + chData.error.message);
-  const uploadsId = chData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-  if (!uploadsId) throw new Error('YouTube: No uploads playlist');
+  // Step 1: get channel info including uploads playlist
+  const chData = await apiFetch(
+    'https://www.googleapis.com/youtube/v3/channels?part=contentDetails,snippet&mine=true',
+    { Authorization: `Bearer ${s.accessToken}` }
+  );
+  if (chData.error) throw new Error('YouTube API error: ' + chData.error.message);
+  if (!chData.items || chData.items.length === 0) throw new Error('YouTube: No channel found for this account');
 
-  const plData = await apiFetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=30`, { Authorization: `Bearer ${s.accessToken}` });
-  if (plData.error) throw new Error('YouTube: ' + plData.error.message);
+  const channel = chData.items[0];
+  const uploadsId = channel.contentDetails?.relatedPlaylists?.uploads;
+  if (!uploadsId) throw new Error('YouTube: Could not find uploads playlist');
 
-  const ids = (plData.items || []).map(i => i.contentDetails.videoId).join(',');
-  const statsData = await apiFetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ids}`, { Authorization: `Bearer ${s.accessToken}` });
+  // Step 2: get videos from uploads playlist
+  const plData = await apiFetch(
+    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=50`,
+    { Authorization: `Bearer ${s.accessToken}` }
+  );
+  if (plData.error) throw new Error('YouTube playlist error: ' + plData.error.message);
+  if (!plData.items || plData.items.length === 0) return []; // channel has no videos
+
+  const ids = plData.items.map(i => i.contentDetails.videoId).filter(Boolean).join(',');
+
+  // Step 3: get video statistics
+  const statsData = await apiFetch(
+    `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${ids}`,
+    { Authorization: `Bearer ${s.accessToken}` }
+  );
   const statsMap = {};
   (statsData.items || []).forEach(v => { statsMap[v.id] = v.statistics; });
 
-  return (plData.items || []).map(item => {
-    const sn = item.snippet, vid = item.contentDetails.videoId, st = statsMap[vid] || {};
+  return plData.items.map(item => {
+    const sn = item.snippet;
+    const vid = item.contentDetails.videoId;
+    const st = statsMap[vid] || {};
     return {
       externalId: 'yt_' + vid,
       username: s.handle, displayName: s.displayName, avatar: s.avatar,
-      content: sn.title + (sn.description ? '\n\n' + sn.description.substring(0, 200) : ''),
-      media: [sn.thumbnails?.high?.url || sn.thumbnails?.default?.url || ''],
+      content: sn.title + (sn.description ? '
+
+' + sn.description.substring(0, 200) : ''),
+      media: [sn.thumbnails?.high?.url || sn.thumbnails?.maxres?.url || sn.thumbnails?.default?.url || ''],
       url: `https://www.youtube.com/watch?v=${vid}`,
       likes: parseInt(st.likeCount) || 0, comments: parseInt(st.commentCount) || 0, shares: 0,
-      publishedAt: new Date(sn.publishedAt),
+      publishedAt: new Date(sn.publishedAt || sn.publishTime || Date.now()),
     };
   });
 }
