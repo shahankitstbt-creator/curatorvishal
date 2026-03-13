@@ -132,7 +132,7 @@ async function fetchFacebook(s) {
     const picData = await apiFetch(`https://graph.facebook.com/${pageId}/picture?type=large&redirect=false&access_token=${pageToken}`);
     if (picData.data && picData.data.url) avatar = picData.data.url;
 
-    postsData = await apiFetch(`https://graph.facebook.com/${pageId}/posts?fields=id,message,full_picture,permalink_url,created_time,reactions.summary(true),comments.summary(true)&access_token=${pageToken}&limit=30`);
+    postsData = await apiFetch(`https://graph.facebook.com/${pageId}/feed?fields=id,message,full_picture,permalink_url,created_time,reactions.summary(true),comments.summary(true)&access_token=${pageToken}&limit=30`);
   } else {
     // Fallback: try personal profile posts
     postsData = await apiFetch(`https://graph.facebook.com/me/posts?fields=id,message,full_picture,permalink_url,created_time,reactions.summary(true),comments.summary(true)&access_token=${token}&limit=30`);
