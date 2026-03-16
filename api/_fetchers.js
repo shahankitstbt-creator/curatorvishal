@@ -201,14 +201,17 @@ async function fetchYouTube(s) {
 }
 
 async function fetchTwitter(s) {
-  const me = await apiFetch('https://api.twitter.com/2/users/me', { Authorization: `Bearer ${s.accessToken}` });
+  const me = await apiFetch('https://api.twitter.com/2/users/me', { Authorization: 'Bearer ' + s.accessToken });
   if (me.errors) throw new Error('Twitter: ' + me.errors[0].message);
+  if (!me.data) throw new Error('Twitter: Could not get user info. Token may be expired - please reconnect.');
 
   const d = await apiFetch(
-    `https://api.twitter.com/2/users/${me.data.id}/tweets?tweet.fields=created_at,public_metrics,attachments&expansions=attachments.media_keys&media.fields=url,preview_image_url&max_results=20`,
-    { Authorization: `Bearer ${s.accessToken}` }
+    'https://api.twitter.com/2/users/' + me.data.id + '/tweets?tweet.fields=created_at,public_metrics,attachments&expansions=attachments.media_keys&media.fields=url,preview_image_url&max_results=20',
+    { Authorization: 'Bearer ' + s.accessToken }
   );
-  if (d.errors) throw new Error('Twitter: ' + d.errors[0].message);
+  if (d.errors) throw new Error('Twitter API error: ' + JSON.stringify(d.errors));
+  if (d.status === 403 || d.title === 'Forbidden') throw new Error('Twitter: Free tier does not allow reading tweets. Upgrade to Basic tier at developer.twitter.com ($100/mo).');
+  if (d.title) throw new Error('Twitter API: ' + d.title + ' - ' + (d.detail || ''));
 
   const mediaMap = {};
   (d.includes?.media || []).forEach(m => { mediaMap[m.media_key] = m.url || m.preview_image_url || ''; });
