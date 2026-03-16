@@ -38,6 +38,7 @@ app.get('/oauth/callback/:platform', (req, res, next) => { req.query.platform = 
 app.get('/widget.js', wrap(require('./api/widget-script')));
 
 // API routes
+app.all('/api/debug-creds', wrap(require('./api/debug-creds')));
 app.all('/api/debug-sync', wrap(require('./api/debug-sync')));
 app.all('/api/health',      wrap(require('./api/health')));
 app.all('/api/auth',        wrap(require('./api/auth')));
