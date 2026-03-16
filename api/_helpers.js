@@ -68,6 +68,7 @@ const PLATFORM_OAUTH = {
     scope: 'https://www.googleapis.com/auth/youtube.readonly',
     envId: 'YOUTUBE_CLIENT_ID', envSecret: 'YOUTUBE_CLIENT_SECRET',
   },
+  x: null, // alias handled below
   twitter: {
     name: 'X / Twitter', color: '#000000',
     authUrl: 'https://twitter.com/i/oauth2/authorize',
@@ -98,8 +99,13 @@ const PLATFORM_OAUTH = {
   },
 };
 
+// x is alias for twitter
+if (typeof PLATFORM_OAUTH !== 'undefined') PLATFORM_OAUTH.x = PLATFORM_OAUTH.twitter;
+
 function getCreds(platform, storedCred) {
-  const cfg = { ...PLATFORM_OAUTH[platform] };
+  // normalize x -> twitter for platform lookup
+  const p = platform === 'x' ? 'twitter' : platform;
+  const cfg = { ...(PLATFORM_OAUTH[p] || PLATFORM_OAUTH[platform] || {}) };
   cfg.clientId = process.env[cfg.envId] || '';
   cfg.clientSecret = process.env[cfg.envSecret] || '';
   if (storedCred) {

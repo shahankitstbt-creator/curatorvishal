@@ -19,7 +19,8 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    const { platform, clientId, clientSecret, bearerToken } = req.body;
+    let { platform, clientId, clientSecret, bearerToken } = req.body;
+    if (platform === 'x') platform = 'twitter'; // normalize
     if (!platform || !clientId) return err(res, 'platform and clientId required');
     await Credential.findOneAndUpdate(
       { userId: user.id, platform },

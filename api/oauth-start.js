@@ -5,7 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 module.exports = async (req, res) => {
   await connectDB();
 
-  const platform = req.query.platform;
+  const platformRaw = req.query.platform;
+  const platform = platformRaw === 'x' ? 'twitter' : platformRaw;
   const { feedId, type, userId } = req.query;
 
   if (!platform || !userId) return res.status(400).send('Missing params');

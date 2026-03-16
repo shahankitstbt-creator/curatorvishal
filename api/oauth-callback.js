@@ -6,7 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 module.exports = async (req, res) => {
   await connectDB();
 
-  const platform = req.query.platform;
+  const platformRaw = req.query.platform;
+  const platform = platformRaw === 'x' ? 'twitter' : platformRaw;
   const { code, state, error, error_description } = req.query;
 
   if (error) return res.send(donePage(false, platform, error_description || error));
