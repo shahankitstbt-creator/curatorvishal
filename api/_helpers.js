@@ -58,7 +58,7 @@ const PLATFORM_OAUTH = {
     name: 'Facebook', color: '#1877F2',
     authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v19.0/oauth/access_token',
-    scope: 'pages_show_list,pages_read_engagement,public_profile',
+    scope: 'public_profile,pages_show_list,pages_read_engagement,pages_manage_posts',
     envId: 'FACEBOOK_APP_ID', envSecret: 'FACEBOOK_APP_SECRET',
   },
   youtube: {

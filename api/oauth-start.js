@@ -6,7 +6,16 @@ module.exports = async (req, res) => {
   await connectDB();
 
   const platform = req.query.platform;
-  const { feedId, type, userId } = req.query;
+  const { feedId, type } = req.query;
+
+  // Get userId from JWT token (reliable) not query param
+  let userId;
+  try {
+    const payload = verifyToken(getToken(req));
+    userId = payload.id;
+  } catch(e) {
+    return res.status(401).send('Unauthorized - please log in again');
+  }
 
   if (!platform || !userId) return res.status(400).send('Missing params');
 
