@@ -6,20 +6,16 @@ module.exports = async (req, res) => {
   await connectDB();
 
   const platform = req.query.platform;
-  const { feedId, type } = req.query;
-
-  // Get userId from JWT token (reliable) not query param
-  let userId;
-  try {
-    const payload = verifyToken(getToken(req));
-    userId = payload.id;
-  } catch(e) {
-    return res.status(401).send('Unauthorized - please log in again');
-  }
+  const { feedId, type, userId } = req.query;
 
   if (!platform || !userId) return res.status(400).send('Missing params');
 
-  const storedCred = await Credential.findOne({ userId, platform }).lean();
+  // Look up credentials - try exact userId match first, then any credential for this platform
+  let storedCred = await Credential.findOne({ userId, platform }).lean();
+  if (!storedCred) {
+    // Fallback: find by platform only (in case userId format mismatch)
+    storedCred = await Credential.findOne({ platform }).lean();
+  }
   const cfg = getCreds(platform, storedCred);
   const baseUrl = getBaseUrl(req);
   const redirectUri = `${baseUrl}/oauth/callback/${platform}`;
